@@ -22,11 +22,15 @@
       background-color: #4285f4;
       color: white;
       border: none;
-      padding: 10px 15px;
-      border-radius: 20px;
+      padding: 10px 18px;
+      border-radius: 999px;
       cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .jarvis-dialog {
@@ -36,8 +40,8 @@
       right: 20px;
       width: 350px;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       z-index: 10000;
       overflow: hidden;
     }
@@ -45,7 +49,7 @@
     .jarvis-header {
       background: #4285f4;
       color: white;
-      padding: 15px;
+      padding: 12px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -53,6 +57,10 @@
 
     .jarvis-title {
       font-weight: bold;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .jarvis-close {
@@ -64,16 +72,17 @@
     }
 
     .jarvis-instructions {
-      padding: 10px 15px;
+      padding: 10px 14px;
       color: #555;
       border-bottom: 1px solid #eee;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .jarvis-input-container {
       display: flex;
-      padding: 10px;
+      padding: 8px 8px;
       border-bottom: 1px solid #eee;
+      gap: 4px;
     }
 
     .jarvis-input-container input {
@@ -81,8 +90,7 @@
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      margin-right: 5px;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .jarvis-input-container button {
@@ -92,36 +100,35 @@
       border-radius: 4px;
       padding: 8px 10px;
       cursor: pointer;
-      margin-left: 3px;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .jarvis-mode-selection {
-      padding: 8px 10px;
+      padding: 6px 10px;
       display: flex;
       justify-content: space-around;
       border-bottom: 1px solid #eee;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .jarvis-suggestions {
-      padding: 8px 15px;
+      padding: 8px 14px;
       color: #777;
       font-style: italic;
-      font-size: 13px;
+      font-size: 12px;
       border-bottom: 1px solid #eee;
     }
 
     #jarvisAnswer {
-      padding: 10px 15px;
+      padding: 8px 14px;
       max-height: 220px;
       overflow-y: auto;
-      font-size: 14px;
+      font-size: 13px;
       color: #333;
     }
 
     .jarvis-footer {
-      padding: 8px 10px;
+      padding: 6px 10px;
       background: #f5f5f5;
       color: #777;
       font-size: 11px;
@@ -142,7 +149,9 @@
   <!-- Assistant Dialog Box -->
   <div class="jarvis-dialog" id="jarvisDialog">
     <div class="jarvis-header">
-      <div class="jarvis-title">🤖 Jarvis Assistant</div>
+      <div class="jarvis-title">
+        🤖 Jarvis Assistant
+      </div>
       <button class="jarvis-close" onclick="toggleJarvisAssistant()">✕</button>
     </div>
 
@@ -185,4 +194,146 @@
 <script>
   const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
 
-  // 1) Toggle
+  // Toggle dialog open/close
+  function toggleJarvisAssistant() {
+    const dialog = document.getElementById('jarvisDialog');
+    if (!dialog) return;
+    dialog.style.display = (dialog.style.display === 'block') ? 'none' : 'block';
+  }
+
+  // Microphone handling
+  function activateMicrophone() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        console.log('Listening...');
+        document.getElementById('micButton').textContent = '🔴';
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('questionInput').value = transcript;
+      };
+
+      recognition.onend = () => {
+        document.getElementById('micButton').textContent = '🎤';
+      };
+
+      recognition.start();
+    } else {
+      alert('Speech recognition is not supported in your browser.');
+    }
+  }
+
+  // Decide which API to call
+  function processQuestion() {
+    const question = document.getElementById('questionInput').value;
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+
+    if (!question.trim()) {
+      alert('Please enter a question');
+      return;
+    }
+
+    jarvisAnswerEl().textContent = 'Thinking...';
+
+    switch (mode) {
+      case 'wikipedia':
+        fetchWikipediaData(question);
+        break;
+      case 'mistral':
+        fetchMistralAIResponse(question);
+        break;
+      case 'auto':
+      default:
+        if (isFactualQuestion(question)) {
+          fetchWikipediaData(question);
+        } else {
+          fetchMistralAIResponse(question);
+        }
+        break;
+    }
+  }
+
+  function isFactualQuestion(question) {
+    const factualIndicators = ['who', 'what', 'when', 'where', 'how many', 'which'];
+    return factualIndicators.some(indicator =>
+      question.toLowerCase().startsWith(indicator)
+    );
+  }
+
+  // Wikipedia API (no key needed)
+  function fetchWikipediaData(query) {
+    jarvisAnswerEl().textContent = 'Searching Wikipedia...';
+
+    const apiUrl =
+      'https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&origin=*&titles='
+      + encodeURIComponent(query);
+
+    fetch(apiUrl)
+      .then(res => res.json())
+      .then(data => {
+        const pages = data.query && data.query.pages ? data.query.pages : {};
+        const firstId = Object.keys(pages)[0];
+        if (!firstId || firstId === '-1') {
+          jarvisAnswerEl().textContent = 'Sorry, no Wikipedia article found for that.';
+          return;
+        }
+        const page = pages[firstId];
+        let text = page.extract || 'No summary available.';
+        if (text.length > 700) text = text.slice(0, 700) + '...';
+        jarvisAnswerEl().textContent = text;
+      })
+      .catch(() => {
+        jarvisAnswerEl().textContent = 'Error contacting Wikipedia.';
+      });
+  }
+
+  // WARNING: putting API key in frontend is not secure; for demo only.
+  const MISTRAL_API_KEY = 'PUT_YOUR_MISTRAL_KEY_HERE';
+
+  function fetchMistralAIResponse(query) {
+    if (!MISTRAL_API_KEY || MISTRAL_API_KEY === '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr') {
+      jarvisAnswerEl().textContent = 'Set your Mistral API key in the code first.';
+      return;
+    }
+
+    jarvisAnswerEl().textContent = 'Asking Mistral AI...';
+
+    fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + MISTRAL_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        messages: [
+          { role: 'system', content: 'You are a helpful AI assistant.' },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.7
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const msg = data.choices && data.choices[0] &&
+                  data.choices[0].message && data.choices[0].message.content;
+      if (msg) {
+        jarvisAnswerEl().textContent = msg;
+      } else {
+        jarvisAnswerEl().textContent = 'No response from Mistral.';
+      }
+    })
+    .catch(() => {
+      jarvisAnswerEl().textContent = 'Error contacting Mistral API.';
+    });
+  }
+</script>
+</body>
+</html>

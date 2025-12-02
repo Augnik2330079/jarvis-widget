@@ -18,21 +18,20 @@
       z-index: 9999;
     }
 
-.jarvis-trigger button {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  padding: 16px 28px;   /* bigger button */
-  border-radius: 999px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 18px;      /* bigger text */
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+    .jarvis-trigger button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 16px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .jarvis-dialog {
       display: none;
@@ -140,14 +139,12 @@
 <body>
 
 <div class="jarvis-container">
-  <!-- Header with button to open the assistant -->
   <div class="jarvis-trigger">
     <button id="openJarvisBtn" onclick="toggleJarvisAssistant()">
       🤖 Ask Jarvis
     </button>
   </div>
 
-  <!-- Assistant Dialog Box -->
   <div class="jarvis-dialog" id="jarvisDialog">
     <div class="jarvis-header">
       <div class="jarvis-title">
@@ -195,14 +192,12 @@
 <script>
   const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
 
-  // Toggle dialog open/close
   function toggleJarvisAssistant() {
     const dialog = document.getElementById('jarvisDialog');
     if (!dialog) return;
     dialog.style.display = (dialog.style.display === 'block') ? 'none' : 'block';
   }
 
-  // Microphone handling
   function activateMicrophone() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -212,7 +207,6 @@
       recognition.continuous = false;
 
       recognition.onstart = () => {
-        console.log('Listening...');
         document.getElementById('micButton').textContent = '🔴';
       };
 
@@ -231,7 +225,6 @@
     }
   }
 
-  // Decide which API to call
   function processQuestion() {
     const question = document.getElementById('questionInput').value;
     const mode = document.querySelector('input[name="mode"]:checked').value;
@@ -268,7 +261,7 @@
     );
   }
 
-  // Wikipedia API (no key needed) – improved version
+  // Wikipedia API
   function fetchWikipediaData(query) {
     jarvisAnswerEl().textContent = 'Searching Wikipedia...';
 
@@ -295,7 +288,8 @@
         const pageIds = Object.keys(pages).filter(id => id !== '-1');
 
         if (pageIds.length === 0) {
-          jarvisAnswerEl().textContent = 'Sorry, no Wikipedia article found for that.';
+          jarvisAnswerEl().textContent =
+            'No exact article found. Try a shorter topic name like "Artificial intelligence" instead of "what is ai".';
           return;
         }
 
@@ -309,7 +303,6 @@
       });
   }
 
-  // WARNING: putting API key in frontend is not secure; for demo only.
   const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';
 
   function fetchMistralAIResponse(query) {
@@ -348,4 +341,3 @@
 </script>
 </body>
 </html>
-

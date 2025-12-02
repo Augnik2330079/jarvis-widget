@@ -267,24 +267,38 @@
     );
   }
 
-  // Wikipedia API (no key needed)
+  // Wikipedia API (no key needed) – improved version
   function fetchWikipediaData(query) {
     jarvisAnswerEl().textContent = 'Searching Wikipedia...';
 
     const apiUrl =
-      'https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&origin=*&titles='
-      + encodeURIComponent(query);
+      'https://en.wikipedia.org/w/api.php' +
+      '?action=query' +
+      '&prop=extracts' +
+      '&exintro=1' +
+      '&explaintext=1' +
+      '&format=json' +
+      '&origin=*' +
+      '&redirects=1' +
+      '&titles=' + encodeURIComponent(query);
 
     fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
-        const pages = data.query && data.query.pages ? data.query.pages : {};
-        const firstId = Object.keys(pages)[0];
-        if (!firstId || firstId === '-1') {
+        if (!data.query || !data.query.pages) {
+          jarvisAnswerEl().textContent = 'Error: unexpected Wikipedia response.';
+          return;
+        }
+
+        const pages = data.query.pages;
+        const pageIds = Object.keys(pages).filter(id => id !== '-1');
+
+        if (pageIds.length === 0) {
           jarvisAnswerEl().textContent = 'Sorry, no Wikipedia article found for that.';
           return;
         }
-        const page = pages[firstId];
+
+        const page = pages[pageIds[0]];
         let text = page.extract || 'No summary available.';
         if (text.length > 700) text = text.slice(0, 700) + '...';
         jarvisAnswerEl().textContent = text;
@@ -295,7 +309,7 @@
   }
 
   // WARNING: putting API key in frontend is not secure; for demo only.
-  const MISTRAL_API_KEY = 'PUT_YOUR_MISTRAL_KEY_HERE';
+  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';
 
   function fetchMistralAIResponse(query) {
     if (!MISTRAL_API_KEY || MISTRAL_API_KEY === '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr') {

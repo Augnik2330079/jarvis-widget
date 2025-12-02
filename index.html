@@ -135,6 +135,14 @@
       color: #333;
     }
 
+    .jarvis-download {
+      padding: 10px 14px;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+      background: #f9fafb;
+    }
+
     .jarvis-footer {
       padding: 6px 10px;
       background: #f5f5f5;
@@ -197,8 +205,21 @@
       Your answer will appear here.
     </div>
 
+    <!-- Download section for EXE -->
+    <div class="jarvis-download">
+      <button
+        onclick="window.open('https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A', '_blank');"
+        style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">
+        ⬇ Download Jarvis for Windows (2.5 GB)
+      </button>
+      <div style="margin-top:4px;font-size:11px;color:#555;">
+        Windows EXE hosted on Google Drive. Use Wi‑Fi for faster download.
+      </div>
+    </div>
+
     <div class="jarvis-footer">
-      Uses browser mic + Wikipedia + Mistral API (frontend only).
+      Uses browser mic + Wikipedia + Mistral API (frontend only).  
+      Jarvis Desktop © 2025 augnik2330079
     </div>
   </div>
 </div>
@@ -338,7 +359,7 @@
   }
 
   // ----- Mistral -----
-  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';  // <-- put your key here
+  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';  // <- put your key here
 
   function detectIntent(text) {
     if (!MISTRAL_API_KEY) {

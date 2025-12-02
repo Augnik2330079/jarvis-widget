@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jarvis Web Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .jarvis-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    .jarvis-trigger button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .jarvis-dialog {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 350px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      z-index: 10000;
+      overflow: hidden;
+    }
+
+    .jarvis-header {
+      background: #4285f4;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .jarvis-title {
+      font-weight: bold;
+    }
+
+    .jarvis-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .jarvis-instructions {
+      padding: 10px 15px;
+      color: #555;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .jarvis-input-container {
+      display: flex;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .jarvis-input-container input {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 5px;
+      font-size: 14px;
+    }
+
+    .jarvis-input-container button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 10px;
+      cursor: pointer;
+      margin-left: 3px;
+      font-size: 14px;
+    }
+
+    .jarvis-mode-selection {
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-around;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+
+    .jarvis-suggestions {
+      padding: 8px 15px;
+      color: #777;
+      font-style: italic;
+      font-size: 13px;
+      border-bottom: 1px solid #eee;
+    }
+
+    #jarvisAnswer {
+      padding: 10px 15px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .jarvis-footer {
+      padding: 8px 10px;
+      background: #f5f5f5;
+      color: #777;
+      font-size: 11px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="jarvis-container">
+  <!-- Header with button to open the assistant -->
+  <div class="jarvis-trigger">
+    <button id="openJarvisBtn" onclick="toggleJarvisAssistant()">
+      🤖 Ask Jarvis
+    </button>
+  </div>
+
+  <!-- Assistant Dialog Box -->
+  <div class="jarvis-dialog" id="jarvisDialog">
+    <div class="jarvis-header">
+      <div class="jarvis-title">🤖 Jarvis Assistant</div>
+      <button class="jarvis-close" onclick="toggleJarvisAssistant()">✕</button>
+    </div>
+
+    <div class="jarvis-instructions">
+      Type a question or use the mic. Factual = Wikipedia, open chat = Mistral.
+    </div>
+
+    <div class="jarvis-input-container">
+      <input type="text" id="questionInput" placeholder="Ask me anything...">
+      <button id="micButton" onclick="activateMicrophone()">🎤</button>
+      <button id="askButton" onclick="processQuestion()">Ask</button>
+    </div>
+
+    <div class="jarvis-mode-selection">
+      <label>
+        <input type="radio" name="mode" value="auto" checked> Auto
+      </label>
+      <label>
+        <input type="radio" name="mode" value="wikipedia"> Wikipedia
+      </label>
+      <label>
+        <input type="radio" name="mode" value="mistral"> Mistral AI
+      </label>
+    </div>
+
+    <div class="jarvis-suggestions">
+      Try: "Who is Virat Kohli?" or "Explain quantum computing in simple terms".
+    </div>
+
+    <div id="jarvisAnswer">
+      Your answer will appear here.
+    </div>
+
+    <div class="jarvis-footer">
+      Uses browser mic + Wikipedia + Mistral API (frontend only).
+    </div>
+  </div>
+</div>
+
+<script>
+  const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
+
+  // 1) Toggle

@@ -205,14 +205,13 @@
       Your answer will appear here.
     </div>
 
-    <!-- Download section for EXE (uses normal link, opens in new tab) -->
+    <!-- Download section for EXE -->
     <div class="jarvis-download">
-      <a
-        href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
-        target="_blank"
-        style="display:inline-block;background:#10b981;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:13px;">
+      <button
+        onclick="window.open('https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A', '_blank');"
+        style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">
         ⬇ Download Jarvis for Windows (2.5 GB)
-      </a>
+      </button>
       <div style="margin-top:4px;font-size:11px;color:#555;">
         Windows EXE hosted on Google Drive. Use Wi‑Fi for faster download.
       </div>
@@ -287,7 +286,7 @@
 
   function processQuestion() {
     const question = document.getElementById('questionInput').value;
-    const mode = document.querySelector('input[name="mode"]:checked").value;
+    const mode = document.querySelector('input[name="mode"]:checked').value;
 
     if (!question.trim()) {
       alert('Please enter a question');

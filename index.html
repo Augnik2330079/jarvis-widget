@@ -49,10 +49,11 @@
     .jarvis-header {
       background: #4285f4;
       color: white;
-      padding: 12px 14px;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
 
     .jarvis-title {
@@ -69,6 +70,13 @@
       color: white;
       font-size: 18px;
       cursor: pointer;
+    }
+
+    .jarvis-theme-toggle {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
     }
 
     .jarvis-instructions {
@@ -150,11 +158,16 @@
       <div class="jarvis-title">
         🤖 Jarvis Assistant
       </div>
+      <label class="jarvis-theme-toggle">
+        <input type="checkbox" id="jarvisThemeToggle" onchange="toggleJarvisTheme()">
+        Dark
+      </label>
       <button class="jarvis-close" onclick="toggleJarvisAssistant()">✕</button>
     </div>
 
     <div class="jarvis-instructions">
       Type a question or use the mic. Factual = Wikipedia, open chat = Mistral.
+      In Auto mode Jarvis can also open websites or Google search.
     </div>
 
     <div class="jarvis-input-container">
@@ -176,7 +189,8 @@
     </div>
 
     <div class="jarvis-suggestions">
-      Try: "Who is Virat Kohli?" or "Explain quantum computing in simple terms".
+      Try: "Open youtube.com", "Search Google for IPL highlights",
+      "Who is Virat Kohli?", or "Explain quantum computing in simple terms".
     </div>
 
     <div id="jarvisAnswer">
@@ -191,6 +205,7 @@
 
 <script>
   const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
+  const jarvisHistory = [];
 
   function toggleJarvisAssistant() {
     const dialog = document.getElementById('jarvisDialog');
@@ -198,31 +213,54 @@
     dialog.style.display = (dialog.style.display === 'block') ? 'none' : 'block';
   }
 
-  function activateMicrophone() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-
-      recognition.lang = 'en-US';
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        document.getElementById('micButton').textContent = '🔴';
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById('questionInput').value = transcript;
-      };
-
-      recognition.onend = () => {
-        document.getElementById('micButton').textContent = '🎤';
-      };
-
-      recognition.start();
+  function toggleJarvisTheme() {
+    const dark = document.getElementById('jarvisThemeToggle').checked;
+    const dialog = document.getElementById('jarvisDialog');
+    const answer = document.getElementById('jarvisAnswer');
+    if (dark) {
+      dialog.style.backgroundColor = '#1f2933';
+      dialog.style.color = '#f9fafb';
+      answer.style.color = '#f9fafb';
     } else {
-      alert('Speech recognition is not supported in your browser.');
+      dialog.style.backgroundColor = '#ffffff';
+      dialog.style.color = '#333333';
+      answer.style.color = '#333333';
     }
+  }
+
+  function activateMicrophone() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      jarvisAnswerEl().textContent =
+        'Speech recognition is not supported in this browser. Use Chrome/Edge on HTTPS.';
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      document.getElementById('micButton').textContent = '🔴';
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      document.getElementById('questionInput').value = transcript;
+    };
+
+    recognition.onerror = (e) => {
+      console.error('Speech error', e);
+      jarvisAnswerEl().textContent = 'Mic error: ' + (e.error || 'unknown');
+    };
+
+    recognition.onend = () => {
+      document.getElementById('micButton').textContent = '🎤';
+    };
+
+    recognition.start();
   }
 
   function processQuestion() {
@@ -245,11 +283,7 @@
         break;
       case 'auto':
       default:
-        if (isFactualQuestion(question)) {
-          fetchWikipediaData(question);
-        } else {
-          fetchMistralAIResponse(question);
-        }
+        handleAutoMode(question);
         break;
     }
   }
@@ -261,7 +295,7 @@
     );
   }
 
-  // Wikipedia API
+  // ----- Wikipedia -----
   function fetchWikipediaData(query) {
     jarvisAnswerEl().textContent = 'Searching Wikipedia...';
 
@@ -289,7 +323,7 @@
 
         if (pageIds.length === 0) {
           jarvisAnswerEl().textContent =
-            'No exact article found. Try a shorter topic name like "Artificial intelligence" instead of "what is ai".';
+            'No exact article found. Try a topic name like "Artificial intelligence" instead of a full question.';
           return;
         }
 
@@ -303,7 +337,65 @@
       });
   }
 
-  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';
+  // ----- Mistral -----
+  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';  // put your key here
+
+  function detectIntent(text) {
+    if (!MISTRAL_API_KEY) {
+      return Promise.resolve({ intent: 'unknown', data: '' });
+    }
+
+    const systemPrompt =
+`You are an intent classifier for a voice assistant.
+Return ONLY a JSON object like:
+{"intent": "open_website|search_google|casual_chat|unknown", "data": "extra info"}.`;
+
+    return fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + MISTRAL_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text }
+        ],
+        temperature: 0.2
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const raw = data.choices?.[0]?.message?.content?.trim() || '{}';
+      try { return JSON.parse(raw); }
+      catch { return { intent: 'unknown', data: '' }; }
+    })
+    .catch(() => ({ intent: 'unknown', data: '' }));
+  }
+
+  function handleAutoMode(question) {
+    detectIntent(question).then(result => {
+      const intent = result.intent || 'unknown';
+      const data = (result.data && String(result.data).trim()) || question;
+
+      if (intent === 'open_website') {
+        const url = data.startsWith('http') ? data : 'https://' + data;
+        window.open(url, '_blank');
+        jarvisAnswerEl().textContent = 'Opening ' + url + ' in a new tab.';
+      } else if (intent === 'search_google') {
+        const url = 'https://www.google.com/search?q=' + encodeURIComponent(data);
+        window.open(url, '_blank');
+        jarvisAnswerEl().textContent = 'Searching Google for: ' + data;
+      } else {
+        if (isFactualQuestion(question)) {
+          fetchWikipediaData(question);
+        } else {
+          fetchMistralAIResponse(question);
+        }
+      }
+    });
+  }
 
   function fetchMistralAIResponse(query) {
     if (!MISTRAL_API_KEY) {
@@ -313,6 +405,12 @@
 
     jarvisAnswerEl().textContent = 'Asking Mistral AI...';
 
+    const messages = [
+      { role: 'system', content: 'You are a helpful AI assistant.' },
+      ...jarvisHistory,
+      { role: 'user', content: query }
+    ];
+
     fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -321,18 +419,20 @@
       },
       body: JSON.stringify({
         model: 'mistral-small-latest',
-        messages: [
-          { role: 'system', content: 'You are a helpful AI assistant.' },
-          { role: 'user', content: query }
-        ],
+        messages,
         temperature: 0.7
       })
     })
     .then(res => res.json())
     .then(data => {
-      const msg = data.choices && data.choices[0] &&
-                  data.choices[0].message && data.choices[0].message.content;
-      jarvisAnswerEl().textContent = msg || 'No response from Mistral.';
+      const msg = data.choices?.[0]?.message?.content || 'No response from Mistral.';
+      jarvisAnswerEl().textContent = msg;
+
+      jarvisHistory.push({ role: 'user', content: query });
+      jarvisHistory.push({ role: 'assistant', content: msg });
+      if (jarvisHistory.length > 10) {
+        jarvisHistory.splice(0, jarvisHistory.length - 10);
+      }
     })
     .catch(() => {
       jarvisAnswerEl().textContent = 'Error contacting Mistral API.';

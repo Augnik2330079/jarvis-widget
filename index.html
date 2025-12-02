@@ -312,7 +312,7 @@
   const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';
 
   function fetchMistralAIResponse(query) {
-    if (!MISTRAL_API_KEY || MISTRAL_API_KEY === 'write your mistral code') {
+    if (!MISTRAL_API_KEY) {
       jarvisAnswerEl().textContent = 'Set your Mistral API key in the code first.';
       return;
     }
@@ -338,11 +338,7 @@
     .then(data => {
       const msg = data.choices && data.choices[0] &&
                   data.choices[0].message && data.choices[0].message.content;
-      if (msg) {
-        jarvisAnswerEl().textContent = msg;
-      } else {
-        jarvisAnswerEl().textContent = 'No response from Mistral.';
-      }
+      jarvisAnswerEl().textContent = msg || 'No response from Mistral.';
     })
     .catch(() => {
       jarvisAnswerEl().textContent = 'Error contacting Mistral API.';
@@ -351,4 +347,3 @@
 </script>
 </body>
 </html>
-

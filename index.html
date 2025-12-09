@@ -165,16 +165,38 @@
       <div class="jarvis-title">
         🤖 Jarvis Assistant
       </div>
-      <label class="jarvis-theme-toggle">
-        <input type="checkbox" id="jarvisThemeToggle" onchange="toggleJarvisTheme()">
-        Dark
-      </label>
-      <button class="jarvis-close" onclick="toggleJarvisAssistant()">✕</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button type="button"
+                onclick="toggleJarvisSettings()"
+                title="Settings"
+                style="border:none;background:transparent;color:white;font-size:16px;cursor:pointer;">
+          ⚙
+        </button>
+        <label class="jarvis-theme-toggle">
+          <input type="checkbox" id="jarvisThemeToggle" onchange="toggleJarvisTheme()">
+          Dark
+        </label>
+        <button class="jarvis-close" onclick="toggleJarvisAssistant()">✕</button>
+      </div>
     </div>
 
     <div class="jarvis-instructions">
       Type a question or use the mic. Factual = Wikipedia, open chat = Mistral.
-      In Auto mode Jarvis can also open websites or Google search.
+      In Auto mode Jarvis can also open websites or Google search. Press Ctrl+J to open/close Jarvis.
+    </div>
+
+    <!-- Settings panel -->
+    <div id="jarvisSettings"
+         style="display:none;padding:8px 14px;border-bottom:1px solid #eee;font-size:12px;color:#374151;background:#f9fafb;">
+      <div style="margin-bottom:4px;font-weight:bold;">Settings</div>
+      <label style="display:block;margin-bottom:4px;">
+        <input type="checkbox" id="jarvisShortAnswers" onchange="updateJarvisSettings()">
+        Short answers only
+      </label>
+      <label style="display:block;margin-bottom:4px;">
+        <input type="checkbox" id="jarvisWikiFirst" onchange="updateJarvisSettings()">
+        Use Wikipedia first in Auto mode
+      </label>
     </div>
 
     <div class="jarvis-input-container">
@@ -217,6 +239,29 @@
       "Who is Virat Kohli?", or "Explain quantum computing in simple terms".
     </div>
 
+    <!-- Command help sheet toggle + content -->
+    <div id="jarvisHelpToggle"
+         style="padding:4px 14px 0 14px;font-size:11px;color:#2563eb;cursor:pointer;text-decoration:underline;"
+         onclick="toggleJarvisHelp()">
+      Show all commands
+    </div>
+
+    <div id="jarvisHelpSheet"
+         style="display:none;padding:6px 14px 8px 14px;font-size:11px;color:#374151;border-bottom:1px solid #eee;background:#f9fafb;">
+      <strong>Open & search</strong><br>
+      • Open youtube.com<br>
+      • Open github.com<br>
+      • Search Google for best laptops under 60000<br><br>
+      <strong>Study help</strong><br>
+      • Explain recursion in simple terms<br>
+      • Summarize the causes of World War 2<br>
+      • Give project ideas for web development<br><br>
+      <strong>Coding help</strong><br>
+      • Fix this Python error: list index out of range<br>
+      • Compare Python and Java for beginners<br>
+      • Explain time complexity of binary search
+    </div>
+
     <!-- Error banner -->
     <div id="jarvisError"
          style="display:none;padding:6px 12px;background:#fee2e2;color:#b91c1c;font-size:11px;">
@@ -226,12 +271,17 @@
       Your answer will appear here.
     </div>
 
+    <!-- Rate this answer -->
+    <div id="jarvisFeedback"
+         style="padding:4px 14px 8px 14px;font-size:11px;color:#6b7280;border-top:1px solid #e5e7eb;display:none;">
+    </div>
+
     <!-- Recent commands history -->
     <div id="jarvisHistory"
          style="padding:6px 14px 10px 14px;font-size:11px;color:#6b7280;border-top:1px solid #e5e7eb;">
     </div>
 
-    <!-- Download section for EXE + copy link -->
+    <!-- Download + copy section -->
     <div class="jarvis-download">
       <a
         href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
@@ -277,6 +327,8 @@
   const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
   const jarvisHistory = [];
   const jarvisCommands = [];
+  let jarvisShortAnswers = false;
+  let jarvisWikiFirst = false;
 
   function toggleJarvisAssistant() {
     const dialog = document.getElementById('jarvisDialog');
@@ -315,6 +367,51 @@
     const box = document.getElementById('jarvisError');
     box.textContent = msg;
     box.style.display = 'block';
+  }
+
+  function toggleJarvisSettings() {
+    const box = document.getElementById('jarvisSettings');
+    if (!box) return;
+    box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+  }
+
+  function updateJarvisSettings() {
+    const s1 = document.getElementById('jarvisShortAnswers');
+    const s2 = document.getElementById('jarvisWikiFirst');
+    jarvisShortAnswers = !!(s1 && s1.checked);
+    jarvisWikiFirst = !!(s2 && s2.checked);
+    try {
+      localStorage.setItem('jarvisSettings', JSON.stringify({
+        shortAnswers: jarvisShortAnswers,
+        wikiFirst: jarvisWikiFirst
+      }));
+    } catch (e) {
+      console.warn('Settings save error', e);
+    }
+  }
+
+  // Load settings on page load
+  (function loadJarvisSettings() {
+    try {
+      const stored = JSON.parse(localStorage.getItem('jarvisSettings') || '{}');
+      jarvisShortAnswers = !!stored.shortAnswers;
+      jarvisWikiFirst = !!stored.wikiFirst;
+      const s1 = document.getElementById('jarvisShortAnswers');
+      const s2 = document.getElementById('jarvisWikiFirst');
+      if (s1) s1.checked = jarvisShortAnswers;
+      if (s2) s2.checked = jarvisWikiFirst;
+    } catch (e) {
+      console.warn('Settings load error', e);
+    }
+  })();
+
+  function toggleJarvisHelp() {
+    const sheet = document.getElementById('jarvisHelpSheet');
+    const toggle = document.getElementById('jarvisHelpToggle');
+    if (!sheet || !toggle) return;
+    const open = sheet.style.display === 'block';
+    sheet.style.display = open ? 'none' : 'block';
+    toggle.textContent = open ? 'Show all commands' : 'Hide all commands';
   }
 
   function activateMicrophone() {
@@ -362,6 +459,7 @@
     }
 
     clearJarvisError();
+    hideJarvisFeedback();
     jarvisAnswerEl().textContent = 'Thinking...';
 
     switch (mode) {
@@ -388,6 +486,7 @@
   // ----- Wikipedia -----
   function fetchWikipediaData(query) {
     clearJarvisError();
+    hideJarvisFeedback();
     jarvisAnswerEl().textContent = 'Searching Wikipedia...';
 
     const apiUrl =
@@ -430,7 +529,7 @@
   }
 
   // ----- Mistral -----
-  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';  // <- put your key here
+  const MISTRAL_API_KEY = '0ZMPfsWUDhz07gWp5GzHRTUMblmpZwBr';  // set your key
 
   function detectIntent(text) {
     if (!MISTRAL_API_KEY) {
@@ -468,6 +567,7 @@ Return ONLY a JSON object like:
 
   function handleAutoMode(question) {
     clearJarvisError();
+    hideJarvisFeedback();
     jarvisAnswerEl().textContent = '';
 
     const typing = document.createElement('div');
@@ -495,7 +595,7 @@ Return ONLY a JSON object like:
         jarvisAnswerEl().textContent = 'Searching Google for: ' + data;
         addJarvisCommand(question);
       } else {
-        if (isFactualQuestion(question)) {
+        if (jarvisWikiFirst || isFactualQuestion(question)) {
           fetchWikipediaData(question);
         } else {
           fetchMistralAIResponse(question);
@@ -511,6 +611,7 @@ Return ONLY a JSON object like:
     }
 
     clearJarvisError();
+    hideJarvisFeedback();
     jarvisAnswerEl().textContent = '';
 
     const typing = document.createElement('div');
@@ -540,7 +641,7 @@ Return ONLY a JSON object like:
       body: JSON.stringify({
         model: 'mistral-small-latest',
         messages,
-        temperature: 0.7
+        temperature: jarvisShortAnswers ? 0.4 : 0.7
       })
     })
     .then(res => res.json())
@@ -549,14 +650,19 @@ Return ONLY a JSON object like:
       if (t) t.remove();
 
       const msg = data.choices?.[0]?.message?.content || 'No response from Mistral.';
-      jarvisAnswerEl().textContent = msg;
+      let finalMsg = msg;
+      if (jarvisShortAnswers && finalMsg.length > 800) {
+        finalMsg = finalMsg.slice(0, 800) + '...';
+      }
+      jarvisAnswerEl().textContent = finalMsg;
 
       jarvisHistory.push({ role: 'user', content: query });
-      jarvisHistory.push({ role: 'assistant', content: msg });
+      jarvisHistory.push({ role: 'assistant', content: finalMsg });
       if (jarvisHistory.length > 10) {
         jarvisHistory.splice(0, jarvisHistory.length - 10);
       }
       addJarvisCommand(query);
+      renderJarvisFeedback();
     })
     .catch(() => {
       const t = document.getElementById('jarvisTyping');
@@ -577,6 +683,7 @@ Return ONLY a JSON object like:
 
   function renderJarvisHistory() {
     const box = document.getElementById('jarvisHistory');
+    if (!box) return;
     if (!jarvisCommands.length) {
       box.textContent = '';
       return;
@@ -602,6 +709,53 @@ Return ONLY a JSON object like:
     });
   }
 
+  // ----- Rate this answer -----
+  function renderJarvisFeedback() {
+    const box = document.getElementById('jarvisFeedback');
+    if (!box) return;
+    box.style.display = 'block';
+    box.innerHTML = 'Rate this answer: ';
+
+    const btnUp = document.createElement('button');
+    btnUp.type = 'button';
+    btnUp.textContent = '👍 Helpful';
+    btnUp.style.marginRight = '6px';
+    btnUp.style.fontSize = '11px';
+    btnUp.style.borderRadius = '999px';
+    btnUp.style.border = '1px solid #d1d5db';
+    btnUp.style.background = '#e5f9e7';
+    btnUp.style.cursor = 'pointer';
+
+    const btnDown = document.createElement('button');
+    btnDown.type = 'button';
+    btnDown.textContent = '👎 Not great';
+    btnDown.style.fontSize = '11px';
+    btnDown.style.borderRadius = '999px';
+    btnDown.style.border = '1px solid #d1d5db';
+    btnDown.style.background = '#fee2e2';
+    btnDown.style.cursor = 'pointer';
+
+    const thank = document.createElement('span');
+    thank.style.marginLeft = '8px';
+
+    btnUp.onclick = btnDown.onclick = () => {
+      thank.textContent = 'Thanks for the feedback.';
+      btnUp.disabled = true;
+      btnDown.disabled = true;
+    };
+
+    box.appendChild(btnUp);
+    box.appendChild(btnDown);
+    box.appendChild(thank);
+  }
+
+  function hideJarvisFeedback() {
+    const box = document.getElementById('jarvisFeedback');
+    if (!box) return;
+    box.style.display = 'none';
+    box.textContent = '';
+  }
+
   // ----- Copy download link -----
   function copyJarvisLink() {
     const url = 'https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A';
@@ -624,6 +778,14 @@ Return ONLY a JSON object like:
         statusEl.textContent = 'Could not copy link. Please copy manually.';
       });
   }
+
+  // ----- Keyboard shortcut Ctrl+J / Cmd+J -----
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
+      e.preventDefault();
+      toggleJarvisAssistant();
+    }
+  });
 </script>
 </body>
 </html>

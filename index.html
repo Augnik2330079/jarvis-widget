@@ -88,7 +88,7 @@
 
     .jarvis-input-container {
       display: flex;
-      padding: 8px 8px;
+      padding: 8px 8px 4px 8px;
       border-bottom: 1px solid #eee;
       gap: 4px;
     }
@@ -129,7 +129,7 @@
 
     #jarvisAnswer {
       padding: 8px 14px;
-      max-height: 220px;
+      max-height: 210px;
       overflow-y: auto;
       font-size: 13px;
       color: #333;
@@ -138,7 +138,6 @@
     .jarvis-download {
       padding: 10px 14px;
       border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
       text-align: center;
       background: #f9fafb;
     }
@@ -184,6 +183,23 @@
       <button id="askButton" onclick="processQuestion()">Ask</button>
     </div>
 
+    <!-- Quick command chips -->
+    <div id="jarvisQuickCommands" style="padding:4px 10px 6px 10px;font-size:11px;color:#6b7280;border-bottom:1px solid #eee;">
+      <span style="margin-right:6px;">Quick commands:</span>
+      <button type="button" onclick="setQuickCommand('Open youtube.com')"
+              style="border:none;background:#e5e7eb;border-radius:999px;padding:4px 8px;font-size:11px;cursor:pointer;margin:0 3px;">
+        Open YouTube
+      </button>
+      <button type="button" onclick="setQuickCommand('Search Google for Python tutorials')"
+              style="border:none;background:#e5e7eb;border-radius:999px;padding:4px 8px;font-size:11px;cursor:pointer;margin:0 3px;">
+        Python tutorial
+      </button>
+      <button type="button" onclick="setQuickCommand('Who is Virat Kohli?')"
+              style="border:none;background:#e5e7eb;border-radius:999px;padding:4px 8px;font-size:11px;cursor:pointer;margin:0 3px;">
+        Virat Kohli
+      </button>
+    </div>
+
     <div class="jarvis-mode-selection">
       <label>
         <input type="radio" name="mode" value="auto" checked> Auto
@@ -201,20 +217,53 @@
       "Who is Virat Kohli?", or "Explain quantum computing in simple terms".
     </div>
 
+    <!-- Error banner -->
+    <div id="jarvisError"
+         style="display:none;padding:6px 12px;background:#fee2e2;color:#b91c1c;font-size:11px;">
+    </div>
+
     <div id="jarvisAnswer">
       Your answer will appear here.
     </div>
 
-    <!-- Download section for EXE -->
+    <!-- Recent commands history -->
+    <div id="jarvisHistory"
+         style="padding:6px 14px 10px 14px;font-size:11px;color:#6b7280;border-top:1px solid #e5e7eb;">
+    </div>
+
+    <!-- Download section for EXE + copy link -->
     <div class="jarvis-download">
-      <button
-        onclick="window.open('https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A', '_blank');"
-        style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">
+      <a
+        href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
+        target="_blank"
+        rel="noopener"
+        style="display:inline-block;background:#10b981;color:#fff;padding:8px 16px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,0.1);">
         ⬇ Download Jarvis for Windows (2.5 GB)
-      </button>
-      <div style="margin-top:4px;font-size:11px;color:#555;">
+      </a>
+      <p style="margin-top:6px;font-size:11px;color:#555;">
         Windows EXE hosted on Google Drive. Use Wi‑Fi for faster download.
+      </p>
+
+      <p style="margin-top:8px;font-size:12px;color:#4b5563;line-height:1.4;">
+        Or copy this link directly:
+      </p>
+      <div style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;">
+        <a
+          id="jarvisDownloadLink"
+          href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
+          target="_blank"
+          rel="noopener"
+          style="color:#0f766e;text-decoration:underline;word-break:break-all;font-size:11px;">
+          https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A
+        </a>
+        <button
+          type="button"
+          onclick="copyJarvisLink()"
+          style="background:#4b5563;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">
+          Copy
+        </button>
       </div>
+      <div id="jarvisCopyStatus" style="margin-top:4px;font-size:11px;color:#16a34a;"></div>
     </div>
 
     <div class="jarvis-footer">
@@ -227,6 +276,7 @@
 <script>
   const jarvisAnswerEl = () => document.getElementById('jarvisAnswer');
   const jarvisHistory = [];
+  const jarvisCommands = [];
 
   function toggleJarvisAssistant() {
     const dialog = document.getElementById('jarvisDialog');
@@ -247,6 +297,24 @@
       dialog.style.color = '#333333';
       answer.style.color = '#333333';
     }
+  }
+
+  function setQuickCommand(text) {
+    const input = document.getElementById('questionInput');
+    input.value = text;
+    input.focus();
+  }
+
+  function clearJarvisError() {
+    const box = document.getElementById('jarvisError');
+    box.style.display = 'none';
+    box.textContent = '';
+  }
+
+  function showJarvisError(msg) {
+    const box = document.getElementById('jarvisError');
+    box.textContent = msg;
+    box.style.display = 'block';
   }
 
   function activateMicrophone() {
@@ -274,7 +342,7 @@
 
     recognition.onerror = (e) => {
       console.error('Speech error', e);
-      jarvisAnswerEl().textContent = 'Mic error: ' + (e.error || 'unknown');
+      showJarvisError('Mic error: ' + (e.error || 'unknown'));
     };
 
     recognition.onend = () => {
@@ -293,6 +361,7 @@
       return;
     }
 
+    clearJarvisError();
     jarvisAnswerEl().textContent = 'Thinking...';
 
     switch (mode) {
@@ -318,6 +387,7 @@
 
   // ----- Wikipedia -----
   function fetchWikipediaData(query) {
+    clearJarvisError();
     jarvisAnswerEl().textContent = 'Searching Wikipedia...';
 
     const apiUrl =
@@ -335,7 +405,7 @@
       .then(res => res.json())
       .then(data => {
         if (!data.query || !data.query.pages) {
-          jarvisAnswerEl().textContent = 'Error: unexpected Wikipedia response.';
+          showJarvisError('Error: unexpected Wikipedia response.');
           return;
         }
 
@@ -352,9 +422,10 @@
         let text = page.extract || 'No summary available.';
         if (text.length > 700) text = text.slice(0, 700) + '...';
         jarvisAnswerEl().textContent = text;
+        addJarvisCommand(query);
       })
       .catch(() => {
-        jarvisAnswerEl().textContent = 'Error contacting Wikipedia.';
+        showJarvisError('Error contacting Wikipedia.');
       });
   }
 
@@ -396,18 +467,33 @@ Return ONLY a JSON object like:
   }
 
   function handleAutoMode(question) {
+    clearJarvisError();
+    jarvisAnswerEl().textContent = '';
+
+    const typing = document.createElement('div');
+    typing.id = 'jarvisTyping';
+    typing.textContent = 'Jarvis is thinking...';
+    typing.style.fontSize = '12px';
+    typing.style.color = '#6b7280';
+    jarvisAnswerEl().appendChild(typing);
+
     detectIntent(question).then(result => {
       const intent = result.intent || 'unknown';
       const data = (result.data && String(result.data).trim()) || question;
+
+      const t = document.getElementById('jarvisTyping');
+      if (t) t.remove();
 
       if (intent === 'open_website') {
         const url = data.startsWith('http') ? data : 'https://' + data;
         window.open(url, '_blank');
         jarvisAnswerEl().textContent = 'Opening ' + url + ' in a new tab.';
+        addJarvisCommand(question);
       } else if (intent === 'search_google') {
         const url = 'https://www.google.com/search?q=' + encodeURIComponent(data);
         window.open(url, '_blank');
         jarvisAnswerEl().textContent = 'Searching Google for: ' + data;
+        addJarvisCommand(question);
       } else {
         if (isFactualQuestion(question)) {
           fetchWikipediaData(question);
@@ -424,10 +510,23 @@ Return ONLY a JSON object like:
       return;
     }
 
-    jarvisAnswerEl().textContent = 'Asking Mistral AI...';
+    clearJarvisError();
+    jarvisAnswerEl().textContent = '';
+
+    const typing = document.createElement('div');
+    typing.id = 'jarvisTyping';
+    typing.textContent = 'Jarvis is thinking...';
+    typing.style.fontSize = '12px';
+    typing.style.color = '#6b7280';
+    jarvisAnswerEl().appendChild(typing);
 
     const messages = [
-      { role: 'system', content: 'You are a helpful AI assistant.' },
+      {
+        role: 'system',
+        content:
+          'You are Jarvis, a helpful AI assistant on a personal website. ' +
+          'Answer in 2–4 short paragraphs or bullet points, be practical, and avoid very long essays.'
+      },
       ...jarvisHistory,
       { role: 'user', content: query }
     ];
@@ -446,6 +545,9 @@ Return ONLY a JSON object like:
     })
     .then(res => res.json())
     .then(data => {
+      const t = document.getElementById('jarvisTyping');
+      if (t) t.remove();
+
       const msg = data.choices?.[0]?.message?.content || 'No response from Mistral.';
       jarvisAnswerEl().textContent = msg;
 
@@ -454,10 +556,73 @@ Return ONLY a JSON object like:
       if (jarvisHistory.length > 10) {
         jarvisHistory.splice(0, jarvisHistory.length - 10);
       }
+      addJarvisCommand(query);
     })
     .catch(() => {
-      jarvisAnswerEl().textContent = 'Error contacting Mistral API.';
+      const t = document.getElementById('jarvisTyping');
+      if (t) t.remove();
+      showJarvisError('Error contacting Mistral API.');
     });
+  }
+
+  // ----- Recent commands -----
+  function addJarvisCommand(cmd) {
+    if (!cmd || !cmd.trim) return;
+    const c = cmd.trim();
+    if (!c) return;
+    jarvisCommands.push(c);
+    if (jarvisCommands.length > 5) jarvisCommands.shift();
+    renderJarvisHistory();
+  }
+
+  function renderJarvisHistory() {
+    const box = document.getElementById('jarvisHistory');
+    if (!jarvisCommands.length) {
+      box.textContent = '';
+      return;
+    }
+    box.innerHTML = 'Recent commands: ';
+    jarvisCommands.slice().reverse().forEach(cmd => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = cmd.length > 22 ? cmd.slice(0, 22) + '…' : cmd;
+      btn.style.margin = '3px 4px';
+      btn.style.padding = '3px 7px';
+      btn.style.fontSize = '11px';
+      btn.style.borderRadius = '999px';
+      btn.style.border = '1px solid #d1d5db';
+      btn.style.background = '#f9fafb';
+      btn.style.cursor = 'pointer';
+      btn.onclick = () => {
+        const input = document.getElementById('questionInput');
+        input.value = cmd;
+        input.focus();
+      };
+      box.appendChild(btn);
+    });
+  }
+
+  // ----- Copy download link -----
+  function copyJarvisLink() {
+    const url = 'https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A';
+    const statusEl = document.getElementById('jarvisCopyStatus');
+    if (!navigator.clipboard) {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      statusEl.textContent = 'Link copied to clipboard.';
+      return;
+    }
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        statusEl.textContent = 'Link copied to clipboard.';
+      })
+      .catch(() => {
+        statusEl.textContent = 'Could not copy link. Please copy manually.';
+      });
   }
 </script>
 </body>

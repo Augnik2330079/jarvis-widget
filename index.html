@@ -135,13 +135,6 @@
       color: #333;
     }
 
-    .jarvis-download {
-      padding: 10px 14px;
-      border-top: 1px solid #eee;
-      text-align: center;
-      background: #f9fafb;
-    }
-
     .jarvis-footer {
       padding: 6px 10px;
       background: #f5f5f5;
@@ -279,41 +272,6 @@
     <!-- Recent commands history -->
     <div id="jarvisHistory"
          style="padding:6px 14px 10px 14px;font-size:11px;color:#6b7280;border-top:1px solid #e5e7eb;">
-    </div>
-
-    <!-- Download + copy section -->
-    <div class="jarvis-download">
-      <a
-        href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
-        target="_blank"
-        rel="noopener"
-        style="display:inline-block;background:#10b981;color:#fff;padding:8px 16px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:600;box-shadow:0 3px 8px rgba(0,0,0,0.1);">
-        ⬇ Download Jarvis for Windows (2.5 GB)
-      </a>
-      <p style="margin-top:6px;font-size:11px;color:#555;">
-        Windows EXE hosted on Google Drive. Use Wi‑Fi for faster download.
-      </p>
-
-      <p style="margin-top:8px;font-size:12px;color:#4b5563;line-height:1.4;">
-        Or copy this link directly:
-      </p>
-      <div style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;">
-        <a
-          id="jarvisDownloadLink"
-          href="https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A"
-          target="_blank"
-          rel="noopener"
-          style="color:#0f766e;text-decoration:underline;word-break:break-all;font-size:11px;">
-          https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A
-        </a>
-        <button
-          type="button"
-          onclick="copyJarvisLink()"
-          style="background:#4b5563;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;">
-          Copy
-        </button>
-      </div>
-      <div id="jarvisCopyStatus" style="margin-top:4px;font-size:11px;color:#16a34a;"></div>
     </div>
 
     <div class="jarvis-footer">
@@ -754,29 +712,6 @@ Return ONLY a JSON object like:
     if (!box) return;
     box.style.display = 'none';
     box.textContent = '';
-  }
-
-  // ----- Copy download link -----
-  function copyJarvisLink() {
-    const url = 'https://drive.google.com/uc?export=download&id=1v0OjVBm-W6M-iKEm0M8RpUgrlpPA_a7A';
-    const statusEl = document.getElementById('jarvisCopyStatus');
-    if (!navigator.clipboard) {
-      const textarea = document.createElement('textarea');
-      textarea.value = url;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      statusEl.textContent = 'Link copied to clipboard.';
-      return;
-    }
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        statusEl.textContent = 'Link copied to clipboard.';
-      })
-      .catch(() => {
-        statusEl.textContent = 'Could not copy link. Please copy manually.';
-      });
   }
 
   // ----- Keyboard shortcut Ctrl+J / Cmd+J -----
